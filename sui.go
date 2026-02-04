@@ -228,3 +228,35 @@ func ListDynamicFields(conn *grpc.ClientConn, objectId string, pagesize *uint32,
 
 	return resp, nil
 }
+
+func OwnedCoins(listownedobjects *pb.ListOwnedObjectsResponse, cointype, owner string) []*pb.Object {
+	list := listownedobjects
+
+	var coins []*pb.Object
+	for _, v := range list.GetObjects() {
+
+		if *v.ObjectType == cointype {
+
+			coins = append(coins, v)
+		}
+	}
+
+	return coins
+}
+
+func GasPayment(coins []*pb.Object, owner string, price uint64, budget uint64) *pb.GasPayment {
+	coinObjects := []*pb.ObjectReference{}
+	for _, coin := range coins {
+		coinObjects = append(coinObjects, &pb.ObjectReference{
+			ObjectId: coin.ObjectId,
+			Version:  coin.Version,
+			Digest:   coin.Digest,
+		})
+	}
+	return &pb.GasPayment{
+		Objects: coinObjects,
+		Owner:   &owner,
+		Price:   &price,
+		Budget:  &budget,
+	}
+}
