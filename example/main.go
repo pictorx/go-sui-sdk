@@ -26,7 +26,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	getEpoch(conn, ctx)
+	/*getEpoch(conn, ctx)
 	getObject(conn, ctx)
 	getTransaction(conn, ctx)
 	batchGetObjects(conn, ctx)
@@ -40,7 +40,9 @@ func main() {
 	getCoinInfo(conn, ctx)
 	listBalances(conn, ctx)
 	listOwnedObjects(conn, ctx)
-	listDynamicFields(conn, ctx)
+	listDynamicFields(conn, ctx)*/
+
+	listOwnedObjects(conn, ctx)
 
 }
 

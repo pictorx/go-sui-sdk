@@ -260,3 +260,19 @@ func GasPayment(coins []*pb.Object, owner string, price uint64, budget uint64) *
 		Budget:  &budget,
 	}
 }
+
+/*
+object_type:"0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI>"
+*/
+type Coin struct {
+	Type string
+}
+
+func (c *Coin) String() string {
+	prefix := "0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin"
+	return prefix + "<" + c.Type + ">"
+}
+
+var SuiCoin Coin = Coin{
+	Type: "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
+}
