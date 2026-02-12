@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/block-vision/sui-go-sdk/signer"
 	gosuisdk "github.com/pictorx/go-sui-sdk"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -47,6 +48,12 @@ func main() {
 		splitMIST = uint64(100_000_000) // 0.1 SUI in MIST
 	)
 
+	gas, err := gosuisdk.GetGas(conn, ctx)
+	if err != nil {
+		panic(err)
+	}
+	gasPrice := gas.Epoch.ReferenceGasPrice
+
 	// ── Fetch gas coin from chain ─────────────────────────────────────────
 	ownedObjs, err := gosuisdk.ListOwnedObjects(conn, sender, nil, nil, ctx)
 	if err != nil {
@@ -61,47 +68,25 @@ func main() {
 		panic(err)
 	}
 
+	account, err := signer.NewSignerWithSecretKey("suiprivkey1qqqzjfp65wl44ve65a2cpf77006hl2wrrau702nf7huxzr99nxmq2uyepsl")
+	if err != nil {
+		panic(err)
+	}
+
 	// ── Build transaction ─────────────────────────────────────────────────
-	b := gosuisdk.NewBuilder(ctx, mod)
-
-	if err := b.SetConfig(sender, 10_000_000, 1_000); err != nil {
-		log.Fatalf("SetConfig: %v", err)
-	}
-	if err := b.AddGasObject(
-		fmt.Sprintf("%v", gasCoin.Object.ObjectId),
-		uint64(*gasCoin.Object.Version),
-		fmt.Sprintf("%s", *gasCoin.Object.Digest),
-	); err != nil {
-		log.Fatalf("AddGasObject: %v", err)
+	split := gosuisdk.SplitCoin{
+		Gasbudget: 100_000_000,
+		Gasprice:  *gasPrice,
+		Amount:    splitMIST / 10,
+		GasCoin:   gasCoin,
+		Sender:    sender,
+		Recipient: sender,
 	}
 
-	// SplitCoins(Gas, [splitMIST])
-	gasArgID := b.GasArgument()
-	amountID := b.PureU64(splitMIST)
-	baseID, err := b.SplitCoins(gasArgID, []uint64{amountID})
+	resp, err := split.SignExecuteTx(conn, mod, account, ctx)
 	if err != nil {
-		log.Fatalf("SplitCoins: %v", err)
+		panic(err)
 	}
 
-	// The single result coin is at sub-index 0.
-	coinID := b.NestedResult(baseID, 0)
-
-	// TransferObjects([coin], @recipient)
-	recipientID, err := b.PureAddress(recipient)
-	if err != nil {
-		log.Fatalf("PureAddress: %v", err)
-	}
-	if err := b.TransferObjects([]uint64{coinID}, recipientID); err != nil {
-		log.Fatalf("TransferObjects: %v", err)
-	}
-
-	// Serialise — consumes the builder.
-	bcsBytes, err := b.Build()
-	if err != nil {
-		log.Fatalf("Build: %v", err)
-	}
-
-	fmt.Printf("Transaction BCS (%d bytes): %x\n", len(bcsBytes), bcsBytes)
-
-	// TODO: sign bcsBytes with your keypair and submit via Sui gRPC.
+	fmt.Println(resp)
 }
