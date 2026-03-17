@@ -7,6 +7,7 @@ import (
 
 	"github.com/block-vision/sui-go-sdk/signer"
 	pb "github.com/pictorx/go-sui-sdk/sui_rpc_proto/generated"
+	v2 "github.com/pictorx/go-sui-sdk/v2"
 	"github.com/tetratelabs/wazero/api"
 	"google.golang.org/grpc"
 )
@@ -417,6 +418,36 @@ func (split *SplitCoin) buildTx(mod api.Module, ctx context.Context) ([]byte, er
 	return b.Build()
 }
 
+func (split *SplitCoin) buildTxCgo(ctx context.Context) ([]byte, error) {
+	b := v2.NewBuilder(ctx, nil)
+	// Set config with the specific budget passed in
+	if err := b.SetConfig(split.Sender, split.Gasbudget, split.Gasprice); err != nil {
+		return nil, err
+	}
+
+	// Add Gas Object
+	if err := b.AddGasObject(*split.GasCoin.Object.ObjectId, uint64(*split.GasCoin.Object.Version), *split.GasCoin.Object.Digest); err != nil {
+		return nil, err
+	}
+
+	// ... Add your transaction commands (SplitCoins, Transfer, etc) ...
+	// (Copy your existing logic here)
+	gasArg := b.GasArgument()
+	amt := b.PureU64(split.Amount)
+	res, err := b.SplitCoins(gasArg, []uint64{amt})
+	if err != nil {
+		return nil, err
+	}
+	coin := b.NestedResult(res, 0)
+	rec, err := b.PureAddress(split.Recipient)
+	if err != nil {
+		return nil, err
+	}
+	b.TransferObjects([]uint64{coin}, rec)
+
+	return b.Build()
+}
+
 func (split *SplitCoin) SignExecuteTx(conn *grpc.ClientConn, mod api.Module, account *signer.Signer, ctx context.Context) (*pb.ExecuteTransactionResponse, error) {
 	simBytes, err := split.buildTx(mod, ctx)
 	if err != nil {
@@ -462,4 +493,50 @@ func (split *SplitCoin) SignExecuteTx(conn *grpc.ClientConn, mod api.Module, acc
 
 	return resp, err
 
+}
+
+func (split *SplitCoin) SignExecuteTxCgo(conn *grpc.ClientConn, account *signer.Signer, ctx context.Context) (*pb.ExecuteTransactionResponse, error) {
+	simBytes, err := split.buildTxCgo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	simResp, err := SimulateTransaction(conn, simBytes, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	optimalBudget, err := EstimateGasBudget(simResp)
+	if err != nil {
+		return nil, err
+	}
+
+	split.Gasbudget = optimalBudget
+	execBytes, err := split.buildTxCgo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	signed, err := SignTransaction(execBytes, account)
+	if err != nil {
+		return nil, err
+	}
+
+	txBytesRaw, err := base64.StdEncoding.DecodeString(signed.TxBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	signatureRaw, err := base64.StdEncoding.DecodeString(signed.Signature)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := SignExecuteTransaction(
+		conn,
+		txBytesRaw,
+		signatureRaw,
+		ctx,
+	)
+
+	return resp, err
 }

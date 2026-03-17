@@ -68,6 +68,7 @@ enum CoinType {
 // was never drained from `builder.intents`, causing `try_build` to return
 // `Err(Input("unable to resolve intents offline"))`.
 #[cfg(feature = "intents")]
+#[async_trait::async_trait]
 impl IntentResolver for CoinWithBalanceResolver {
     async fn resolve(
         &self,

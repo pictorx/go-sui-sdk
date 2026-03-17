@@ -304,7 +304,7 @@ impl TransactionBuilder {
     // Register a transaction intent which may be resolved later to either an input or a sequence
     // of commands.
     #[cfg(feature = "intents")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "intents")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "intents")))]
     #[allow(private_bounds)]
     pub fn intent<I: crate::intent::Intent>(&mut self, intent: I) -> Argument {
         intent.register(self)
@@ -399,9 +399,9 @@ impl TransactionBuilder {
         })
     }
 
-    // FIXED: Typo 'rcp' -> 'rpc'
-    #[cfg(feature = "rpc")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "rpc")))]
+    // FIXED: Was `#[cfg(feature = "rpc")]` — feature is named "intents" in Cargo.toml.
+    #[cfg(feature = "intents")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "intents")))]
     pub async fn build(mut self, client: &mut sui_rpc::Client) -> Result<Transaction, Error> {
         use sui_rpc::field::FieldMask;
         use sui_rpc::field::FieldMaskUtil;
