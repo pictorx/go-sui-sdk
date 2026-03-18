@@ -43,13 +43,13 @@ package v2
 
 /*
 // ── Adjust paths if you prefer not to use env vars ───────────────────────────
-#cgo CFLAGS:  -I${SRCDIR}/../transaction
-#cgo LDFLAGS: -L${SRCDIR}/../transaction/target/release
+#cgo CFLAGS:  -I../transaction
+#cgo LDFLAGS: -L../transaction/target/release
 // ─────────────────────────────────────────────────────────────────────────────
 
-#cgo linux   LDFLAGS: -L${SRCDIR}/../transaction/target/release -Wl,-Bstatic -ltransaction_builder -Wl,-Bdynamic -lpthread -ldl -lm -lresolv
-#cgo darwin  LDFLAGS: -L${SRCDIR}/../transaction/target/release -ltransaction_builder -lpthread -ldl -lm -framework Security
-#cgo windows LDFLAGS: -L${SRCDIR}/../transaction/target/release -ltransaction_builder -lws2_32 -luserenv -lntdll -lbcrypt
+#cgo linux   LDFLAGS: -L../transaction/target/release -Wl,-Bstatic -ltransaction_builder -Wl,-Bdynamic -lpthread -ldl -lm -lresolv
+#cgo darwin  LDFLAGS: -L../transaction/target/release -ltransaction_builder -lpthread -ldl -lm -framework Security
+#cgo windows LDFLAGS: -L../transaction/target/release -ltransaction_builder -lws2_32 -luserenv -lntdll -lbcrypt
 
 #include "../transaction/transaction_builder.h"
 #include <stdlib.h>   // free(), malloc()
